@@ -1,7 +1,7 @@
-// import './Main.css'
-import LogoutButton from "./LogoutButton.tsx";
+import './Main.css'
+import LogoutButton from "../LogoutButton.tsx";
 import {useEffect, useState} from "react";
-import {apiClient} from "../services/api-client.ts";
+import {apiClient} from "../../services/api-client.ts";
 
 const MainPage = () => {
     const [username, setUsername] = useState<string>('');
@@ -22,10 +22,13 @@ const MainPage = () => {
         getUsername();
     }, []);
     return (
-        <div>
+        <div className="container">
             <LogoutButton/>
             {username ? <div>Welcome, {username}</div> : <div>{error}</div>}
-            <iframe>
+            <iframe
+                className="iframe"
+                src="https://example.com"
+                title="Game">
             </iframe>
         </div>
     );
