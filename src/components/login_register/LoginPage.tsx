@@ -1,5 +1,5 @@
 import {Button, FormControl, FormLabel, Image, Input} from "@chakra-ui/react";
-import chicken from '../../assets/logo.jpg';
+import finallogo from '../../assets/logofinal.png';
 import {FieldValues, useForm} from "react-hook-form";
 import {useNavigate} from "react-router-dom";
 import {useState} from "react";
@@ -23,28 +23,19 @@ const LoginPage = () => {
             .then(res => {
                 console.log('Logged token:', res.data.token);
                 localStorage.setItem('token', res.data.token);
-                toast.success('Successful login!');
+                toast.success('Successfully logged in!');
                 navigate('/');
             })
             .catch(err => {
                 console.log(err)
                 setError('Invalid username or password')
             })
-
-        // try {
-        //     const response = await axios.post('http://localhost:8080/auth/authenticate', data);
-        //     const token = response.data.token;
-        //     console.log('Logged token:', token);
-        //     localStorage.setItem('token', token); // Optionally save the token in localStorage
-        //     navigate('/'); // Redirect after successful login
-        // } catch (error) {
-        //     setError('Invalid username or password');
-        // }
     };
 
     return (
+        <div className="wrapper">
             <div className="container">
-                <Image src={chicken} width={256} />
+                <Image src={finallogo} width={256} />
                 <br/>
                 <div>
                     {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -73,10 +64,10 @@ const LoginPage = () => {
                         </center>
                     </form>
                     <br />
-                    <a onClick={() => navigate("/register")}>
-                        Not a member yet? Register now</a>
+                    <a href="/register">Not a member yet? Register now</a>
                 </div>
             </div>
+        </div>
     );
 };
 

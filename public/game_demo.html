@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Tic-Tac-Toe</title>
+    <title>RiskyRoads</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -10,7 +10,7 @@
         }
         canvas {
             border: 1px solid #000;
-            margin-top: 20px;
+            margin-top: 120px;
         }
         .form-group {
             margin-bottom: 15px;
@@ -36,15 +36,22 @@
             background-color: #218838;
         }
         .game-state {
-            margin-top: 20px;
+            margin-top: 120px;
+        }
+
+        .canvasContainer {
+            margin-top: 100px;
         }
     </style>
 </head>
 <body>
-<div class="container">
+<div class="canvasContainer">
     <div id="gameState" class="game-state"></div>
-    <canvas id="gameCanvas"  width="700" height="580"></canvas>
-    <button style="visibility: hidden; position: absolute;top: 80%; left: 50%" id="reset-button" onclick="">Play again</button>
+    <canvas id="gameCanvas"  width="700" height="700"></canvas>
+    <center>
+        <button style="visibility: hidden;" id="reset-button" onclick="">Play again</button>
+    </center>
+
 </div>
 </body>
 
@@ -136,17 +143,17 @@
                 points=0;
 
                 ctx.clearRect(0, 0, canvas.width, canvas.height/10);
-                ctx.font = "10px Arial";
+                ctx.font = "14px Arial";
                 ctx.fillStyle = 'black';
-                ctx.fillText(`you: ${points}`,5,10);
-                ctx.fillText(`opponent: ${points2}`,canvas.width-60,10);
+                ctx.fillText(`you: ${points}`, 5,15);
+                ctx.fillText(`opponent: ${points2}`,canvas.width-80,15);
 
                 time=30;
 
                 ctx.clearRect(200, 0, 220, canvas.height/10);
-                ctx.font = "10px Arial";
+                ctx.font = "14px Arial";
                 ctx.fillStyle = 'black';
-                ctx.fillText(`time: ${time}`,canvas.width/2-10,10);
+                ctx.fillText(`time: ${time}`,canvas.width/2,15);
 
 
                 connectToRandomNumbersLeft();
@@ -172,11 +179,11 @@
 
                 ctx.clearRect(canvas.width-60, 0, canvas.width, canvas.height/10);
                 ctx.fillStyle = 'black';
-                ctx.fillText(`opponent: ${points2}`,canvas.width-60,10);
+                ctx.fillText(`opponent: ${points2}`,canvas.width-60,15);
 
             }else if(message.type === 'game.gameOver'){
                 ctx.clearRect(0, canvas.height/10, canvas.width, canvas.height);
-                ctx.font = "10px Arial";
+                ctx.font = "14px Arial";
                 ctx.fillStyle = 'black';
 
                 ctx.fillText(`You (${playerName}) win the game`,300,300);
@@ -374,15 +381,15 @@
         time -= JSON.parse(message.body);
 
         ctx.clearRect(200, 0, 220, canvas.height/10);
-        ctx.font = "10px Arial";
+        ctx.font = "14px Arial";
         ctx.fillStyle = 'black';
-        ctx.fillText(`time: ${time}`,canvas.width/2-10,10);
+        ctx.fillText(`time: ${time}`,canvas.width/2-10,15);
 
         if(time==0){
             stompClient.disconnect();
 
             ctx.clearRect(0, canvas.height/10, canvas.width, canvas.height);
-            ctx.font = "10px Arial";
+            ctx.font = "14px Arial";
             ctx.fillStyle = 'black';
 
             gameState="GAMEOVER"
@@ -396,7 +403,7 @@
                 ctx.fillText(`${otherPlayerName} wins the game`,300,300);
                 btn.style.visibility = "visible"
             }else {
-                ctx.fillText(`it´s a TIE`,330,300);
+                ctx.fillText(`it's a TIE`,330,300);
                 btn.style.visibility = "visible"
             }
         }
@@ -498,9 +505,9 @@
         if (playerPosition.y <= canvas.height / 10) {
             points++;
             ctx.clearRect(0, 0, 50, canvas.height/10);
-            ctx.font = "10px Arial";
+            ctx.font = "14px Arial";
             ctx.fillStyle = 'black';
-            ctx.fillText(`you: ${points}`,5,10);
+            ctx.fillText(`you: ${points}`,5,15);
 
             playerPosition.x = respawnX;
             playerPosition.y = respawnY;

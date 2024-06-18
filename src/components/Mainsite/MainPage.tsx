@@ -27,7 +27,7 @@ const MainPage = () => {
     },[]);
 
     return (
-        <div className="container">
+        <div className="iframe-wrapper">
             {/*{error && <p style={{ color: 'red' }}>{error}</p>}*/}
             <iframe
                 className="iframe"
