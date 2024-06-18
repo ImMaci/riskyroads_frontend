@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Tic-Tac-Toe</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        canvas {
+            border: 1px solid #000;
+            margin-top: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .game-state {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div id="gameState" class="game-state"></div>
+    <canvas id="gameCanvas"  width="700" height="580"></canvas>
+    <button style="visibility: hidden; position: absolute;top: 80%; left: 50%" id="reset-button" onclick="">Play again</button>
+</div>
+</body>
+
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2/lib/stomp.min.js"></script>
+<script >
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const btn = document.getElementById('reset-button')
+
+    let stompClient = null;
+
+    let game = null;
+    let player = null;
+
+    let upPress = false;
+    let downPress = false;
+    let leftPress = false;
+    let rightPress = false;
+
+    let interval;
+
+    let respawnX = 0;
+    let respawnY = 490;
+
+    let points = 0;
+    let points2 = 0;
+
+    let speed = 2.5;
+    let width = 10;
+    let height = 10;
+
+    let time = 0;
+
+    let gameId= null;
+
+    let gameState = null;
+
+    let playerName;
+    let otherPlayerName;
+
+    let playerPosition = null;
+    let otherPlayerPosition = null;
+
+
+    function sendMessage(message) {
+        stompClient.send(`/app/${message.type}`, {}, JSON.stringify(message));
+    }
+
+    function onMessageReceived(message) {
+        if(gameId ===  null || gameId === message.gameId){
+            if (message.type === 'game.joined') {
+                gameState = message.gameState;
+                gameId = message.gameId;
+
+                // document.getElementById('gameState').innerText = `Game ID: ${gameId}\nName: ${playerName}`;
+                document.getElementById('gameState').innerText = `Name: ${playerName}`;
+
+                if(gameState==="WAITING_FOR_PLAYER"){
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.font = "50px Arial";
+                    ctx.fillStyle = 'black';
+                    ctx.fillText("Waiting for players",150,300);
+                }
+
+                if(playerName === message.player1.name){
+                    playerPosition=message.player1.pos
+                    otherPlayerPosition=message.player2.pos
+
+                    respawnX=message.player1.pos.x
+                    respawnY=message.player1.pos.y
+
+                    points=message.player1.points;
+
+                    otherPlayerName = message.player2.name;
+                }else {
+                    playerPosition=message.player2.pos
+                    otherPlayerPosition=message.player1.pos
+
+                    respawnX=message.player2.pos.x
+                    respawnY=message.player2.pos.y
+
+                    points=message.player2.points;
+
+                    otherPlayerName = message.player1.name;
+                }
+
+                points=0;
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height/10);
+                ctx.font = "10px Arial";
+                ctx.fillStyle = 'black';
+                ctx.fillText(`you: ${points}`,5,10);
+                ctx.fillText(`opponent: ${points2}`,canvas.width-60,10);
+
+                time=30;
+
+                ctx.clearRect(200, 0, 220, canvas.height/10);
+                ctx.font = "10px Arial";
+                ctx.fillStyle = 'black';
+                ctx.fillText(`time: ${time}`,canvas.width/2-10,10);
+
+
+                connectToRandomNumbersLeft();
+                connectToRandomNumbersRight();
+
+                connectToTimer();
+
+                interval = setInterval(gameloop, 15);
+
+            } else if (message.type === 'game.move') {
+                if (message.sender !== playerName) {
+                    if(playerName === message.player1.name){
+                        otherPlayerPosition = message.player2.pos;
+                    }else otherPlayerPosition = message.player1.pos;
+                }
+            }else if(message.type === 'game.points'){
+
+                if (message.sender !== playerName) {
+                    if(playerName === message.player1.name){
+                        points2 = message.player2.points;
+                    }else points2 = message.player1.points;
+                }
+
+                ctx.clearRect(canvas.width-60, 0, canvas.width, canvas.height/10);
+                ctx.fillStyle = 'black';
+                ctx.fillText(`opponent: ${points2}`,canvas.width-60,10);
+
+            }else if(message.type === 'game.gameOver'){
+                ctx.clearRect(0, canvas.height/10, canvas.width, canvas.height);
+                ctx.font = "10px Arial";
+                ctx.fillStyle = 'black';
+
+                ctx.fillText(`You (${playerName}) win the game`,300,300);
+
+
+                stompClient.disconnect();
+                ctx.clearRect(0,canvas.height/10,canvas.width,canvas.height)
+                gameState="GAMEOVER"
+                btn.style.visibility = "visible"
+            }else console.log(message)
+            draw();
+        }
+    }
+
+    btn.onclick = () => {
+        // Reload the page
+        btn.style.visibility = "hidden"
+        window.location.reload();
+    };
+
+
+    function connect() {
+
+        const token = localStorage.getItem('token');
+
+        const socket = new SockJS('http://localhost:8080/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+        stompClient.connect({ Authorization: `Bearer ${token}` }, function (frame) {
+            stompClient.subscribe('/topic/game.state', function (message) {
+                onMessageReceived(JSON.parse(message.body));
+            });
+            loadGame();
+        });
+    }
+
+
+    let sus = canvas.height / 20;
+    let possYofEnemies1 = [sus * 3, sus * 5, sus * 7, sus * 9, sus * 11, sus * 13, sus * 15, sus * 17];
+    let possYofEnemies2 = [sus * 4, sus * 6, sus * 8, sus * 10, sus * 12, sus * 14, sus * 16, sus * 18];
+
+    let enemies = [];
+    let enemies2 = [];
+
+    class Enemy {
+        constructor() {
+            this.width = 50;
+            this.height = 20;
+            this.speed = 3;
+        }
+    }
+
+    class EnemyLeft extends Enemy {
+        constructor(i) {
+            super();
+            this.x = 0 - this.width;
+            this.y = possYofEnemies1[i] - this.height;
+            this.markedForDeletion = false;
+        }
+        draw() {
+
+            ctx.fillStyle = "red"
+            ctx.fillRect(this.x, this.y, this.width, this.height)
+        }
+        move() {
+            this.x += this.speed;
+            if (this.x >= canvas.width) {
+                this.markedForDeletion = true;
+            }
+            if (
+                playerPosition.x < this.x + this.width &&
+                playerPosition.x + width > this.x &&
+                playerPosition.y < this.y + this.height &&
+                playerPosition.y + height > this.y
+            ) {
+                playerPosition.x = respawnX;
+                playerPosition.y = respawnY;
+            }
+        }
+    }
+
+    class EnemyRight extends Enemy {
+        constructor(i) {
+            super();
+            this.x = canvas.width;
+            this.y = possYofEnemies2[i] - this.height;
+            this.markedForDeletion = false;
+        }
+        draw() {
+            ctx.fillStyle = "red"
+            ctx.fillRect(this.x, this.y, this.width, this.height)
+        }
+        move() {
+            this.x -= this.speed;
+            if (this.x <= 0 - this.width) {
+                this.markedForDeletion2 = true;
+            }
+            if (
+                playerPosition.x < this.x + this.width &&
+                playerPosition.x + width > this.x &&
+                playerPosition.y < this.y + this.height &&
+                playerPosition.y + height > this.y
+            ) {
+                playerPosition.x = respawnX
+                playerPosition.y = respawnY
+            }
+        }
+    }
+
+    const gameloop = () => {
+        if(gameState=="PLAYING"){
+
+            ctx.clearRect(0, canvas.height/10, canvas.width, canvas.height);
+
+            [...enemies].forEach(object => object.move());
+            [...enemies].forEach(object => object.draw());
+
+
+            [...enemies2].forEach(object => object.move());
+            [...enemies2].forEach(object => object.draw());
+
+
+            enemies = enemies.filter(object => !object.markedForDeletion);
+            enemies2 = enemies2.filter(object => !object.markedForDeletion2);
+
+            update();
+        }
+    }
+
+
+    function connectToRandomNumbersRight() {
+        const token = localStorage.getItem('token');
+
+        const socket = new SockJS('http://localhost:8080/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+
+        stompClient.connect({ Authorization: `Bearer ${token}` }, function (frame) {
+            setTimeout(() => {
+                stompClient.subscribe('/topic/numbersright',function (message) {
+                    onRandomNumbersRightMessageReceived(message);
+                });
+            }, 1000);
+        });
+    }
+
+    function onRandomNumbersRightMessageReceived(message){
+        const number = JSON.parse(message.body);
+        enemies.push(new EnemyRight(number));
+        // numbers.push(number);
+    }
+
+    function connectToRandomNumbersLeft() {
+
+        const token = localStorage.getItem('token');
+
+        const socket = new SockJS('http://localhost:8080/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+
+        stompClient.connect({ Authorization: `Bearer ${token}` }, function (frame) {
+            setTimeout(()=> {
+                stompClient.subscribe('/topic/numbersleft',function (message) {
+                    onRandomNumbersLeftMessageReceived(message);
+                });
+            },1000)
+        });
+    }
+
+    function onRandomNumbersLeftMessageReceived(message){
+        const number = JSON.parse(message.body);
+        enemies.push(new EnemyLeft(number));
+        //numbers.push(number);
+    }
+
+    function connectToTimer() {
+
+        const token = localStorage.getItem('token');
+
+        const socket = new SockJS('http://localhost:8080/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.debug = null;
+
+        stompClient.connect({ Authorization: `Bearer ${token}` }, function (frame) {
+            setTimeout(()=>{
+                stompClient.subscribe('/topic/timer',function (message) {
+                    onTimeStampReceived(message);
+                });
+            },1000)
+        });
+    }
+
+    function onTimeStampReceived(message){
+
+        time -= JSON.parse(message.body);
+
+        ctx.clearRect(200, 0, 220, canvas.height/10);
+        ctx.font = "10px Arial";
+        ctx.fillStyle = 'black';
+        ctx.fillText(`time: ${time}`,canvas.width/2-10,10);
+
+        if(time==0){
+            stompClient.disconnect();
+
+            ctx.clearRect(0, canvas.height/10, canvas.width, canvas.height);
+            ctx.font = "10px Arial";
+            ctx.fillStyle = 'black';
+
+            gameState="GAMEOVER"
+
+            interval = null;
+
+            if(points>points2){
+                ctx.fillText(`${playerName} wins the game`,300,300);
+                btn.style.visibility = "visible";
+            }else if(points2>points){
+                ctx.fillText(`${otherPlayerName} wins the game`,300,300);
+                btn.style.visibility = "visible"
+            }else {
+                ctx.fillText(`it´s a TIE`,330,300);
+                btn.style.visibility = "visible"
+            }
+        }
+    }
+
+
+    window.onload = function () {
+        connect();
+    }
+
+    function loadGame() {
+        playerName = localStorage.getItem("playername");
+        if (playerName) {
+            sendMessage({
+                type: "game.join",
+                player: {name:playerName}
+            });
+        } else {
+            console.log(playerName)
+        }
+    }
+
+    function sendMove(){
+        sendMessage({
+            type: "game.move",
+            sender: playerName,
+            gameId: gameId,
+            move: playerPosition
+        });
+    }
+
+    function sendPoints(){
+        sendMessage({
+            type: "game.points",
+            sender: playerName,
+            gameId: gameId,
+            points: points
+        });
+    }
+
+    function draw() {
+        // Draw other player
+        ctx.fillStyle = 'red';
+        ctx.fillRect(otherPlayerPosition.x, otherPlayerPosition.y, width, height);
+
+        // Draw player
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(playerPosition.x, playerPosition.y, width, height);
+    }
+
+    window.addEventListener("keydown",  (event) => {keydown(event)});
+    window.addEventListener("keyup",  (event) => {keyup(event)});
+
+
+    keydown = (e) => {
+        if (e.code === "ArrowUp") {
+            upPress = true;
+        }
+        if (e.code === "ArrowDown") {
+            downPress = true;
+        }
+        if (e.code === "ArrowLeft") {
+            leftPress = true;
+        }
+        if (e.code === "ArrowRight") {
+            rightPress = true;
+        }
+    }
+
+    keyup = (e) => {
+        if (e.code === "ArrowUp") {
+            upPress = false;
+        }
+        if (e.code === "ArrowDown") {
+            downPress = false;
+        }
+        if (e.code === "ArrowLeft") {
+            leftPress = false;
+        }
+        if (e.code === "ArrowRight") {
+            rightPress = false;
+        }
+    }
+
+
+    function update(){
+        if (upPress && playerPosition.y >= height) {
+            playerPosition.y -= speed;
+        }
+        if (downPress && playerPosition.y < (canvas.height -height)) {
+            playerPosition.y += speed;
+        }
+        if (leftPress && playerPosition.x > 0) {
+            playerPosition.x -= speed;
+        }
+        if (rightPress && playerPosition.x < canvas.width - (width)) {
+            playerPosition.x += speed;
+        }
+        if (playerPosition.y <= canvas.height / 10) {
+            points++;
+            ctx.clearRect(0, 0, 50, canvas.height/10);
+            ctx.font = "10px Arial";
+            ctx.fillStyle = 'black';
+            ctx.fillText(`you: ${points}`,5,10);
+
+            playerPosition.x = respawnX;
+            playerPosition.y = respawnY;
+            sendPoints();
+        }
+
+        sendMove();
+        draw();
+    }
+
+</script>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        text-align: center;
+    }
+    canvas {
+        border: 1px solid #000;
+        margin-top: 20px;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    label {
+        display: block;
+        margin-bottom: 5px;
+    }
+    input[type="text"] {
+        width: 100%;
+        padding: 8px;
+        box-sizing: border-box;
+    }
+    button {
+        padding: 10px 15px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #218838;
+    }
+    .game-state {
+        margin-top: 20px;
+    }
+</style>
+</body>
+</html>

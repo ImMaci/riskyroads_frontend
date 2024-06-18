@@ -1,4 +1,3 @@
-import React from 'react';
 import { Box, Text, Heading, VStack } from "@chakra-ui/react";
 
 const Impressum = () => {

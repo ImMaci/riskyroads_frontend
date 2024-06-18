@@ -1,33 +1,37 @@
 import './Main.css'
-import LogoutButton from "../LogoutButton.tsx";
 import {useEffect, useState} from "react";
 import {apiClient} from "../../services/api-client.ts";
 
 const MainPage = () => {
-    const [username, setUsername] = useState<string>('');
-    const [error, setError] = useState('');
+    const [, setError] = useState('');
 
     useEffect(() => {
-        const getUsername = async () => {
-            apiClient.get('/user')
+        setTimeout(()=>{
+            const token = localStorage.getItem('token');
+
+            apiClient.get('/user',{
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+                })
                 .then(res => {
-                    setUsername(res.data);
+                    localStorage.setItem("playername", res.data);
                     console.log(res)
+                    console.log("123")
                 })
                 .catch(err => {
                     console.log(err);
                     setError('Username not available')
                 })
-        };
-        getUsername();
-    }, []);
+        },3000)
+    },[]);
+
     return (
         <div className="container">
-            <LogoutButton/>
-            {username ? <div>Welcome, {username}</div> : <div>{error}</div>}
+            {/*{error && <p style={{ color: 'red' }}>{error}</p>}*/}
             <iframe
                 className="iframe"
-                src="https://example.com"
+                src="/game_demo.html"
                 title="Game">
             </iframe>
         </div>

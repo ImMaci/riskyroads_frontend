@@ -5,15 +5,22 @@ import { useNavigate } from "react-router-dom";
 import {useState} from "react";
 import {IUser} from "../../common/models.ts";
 import {registerClient} from "../../services/login-client.ts";
+import './style.css';
 
 const RegisterForm = () => {
     const { register, handleSubmit} = useForm();
     const [error,setError] = useState('');
     const navigate = useNavigate();
+    const [isHovered, setIsHovered] = useState(false);
+    const linkStyle = {
+        color: isHovered ? "blue" : "black",
+        textDecoration: isHovered ? "underline" : "none",
+        cursor: "pointer"
+    };
 
     const onSubmit = async (data: FieldValues) => {
         const user : IUser = {
-            username: data.username,
+            user_name: data.user_name,
             firstname: data.firstname,
             lastname : data.lastname,
             email: data.email,
@@ -48,19 +55,19 @@ const RegisterForm = () => {
     };
 
     return (
-        <div>
+        <div className="container">
             {error && <p style={{ color: 'red' }}>{error}</p>}
             <form onSubmit={handleSubmit(onSubmit)}>
                 <FormLabel>Username</FormLabel>
                 <Input
-                    {...register('username', {
+                    {...register('user_name', {
                         required: "Username is required",
                         maxLength: {
                             value: 16,
                             message: "Username cannot exceed 16 characters"
                         }
                     })}
-                    id='username'
+                    id='user_name'
                     type='text'
                 />
                 {/*{errors.username && <p style={{ color: 'red' }}>{errors.username.message}</p>}*/}
@@ -101,6 +108,10 @@ const RegisterForm = () => {
                     <Button type="submit">Register</Button>
                 </center>
             </form>
+            <a style={linkStyle} onClick={() => navigate("/register")}
+               onMouseEnter={() => setIsHovered(true)}
+               onMouseLeave={() => setIsHovered(false)}>
+                User already? Login now</a>
         </div>
     );
 };
