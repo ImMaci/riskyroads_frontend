@@ -3,7 +3,7 @@ import {useEffect, useState} from "react";
 import {apiClient} from "../../services/api-client.ts";
 
 const MainPage = () => {
-    const [, setError] = useState('');
+    const [error, setError] = useState('');
 
     useEffect(() => {
         setTimeout(()=>{
@@ -28,7 +28,7 @@ const MainPage = () => {
 
     return (
         <div className="iframe-wrapper">
-            {/*{error && <p style={{ color: 'red' }}>{error}</p>}*/}
+            {error && <p style={{ color: 'red' }}>{error}</p>}
             <iframe
                 className="iframe"
                 src="/game_demo.html"

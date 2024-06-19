@@ -1,10 +1,9 @@
 import './NavBarCSS.css';
 import toast, {Toaster} from "react-hot-toast";
 import {Flex, Heading, Spacer} from "@chakra-ui/react";
-import {useNavigate} from "react-router-dom";
+import {useNavigate, Link} from "react-router-dom";
 import {useEffect, useState} from "react";
 import { IoLogOutOutline } from "react-icons/io5";
-
 
 const NavBar = () => {
     const [loggedIn, setLoggedIn] = useState<boolean>(false);
@@ -13,7 +12,7 @@ const NavBar = () => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         setLoggedIn(!token)
-    },[]);
+    }, []);
 
     const removeToken = () => {
         localStorage.removeItem('token');
@@ -27,15 +26,20 @@ const NavBar = () => {
                 reverseOrder={false}/>
             </div>
             <Flex padding={5}>
-                <Heading><a href="/">RiskyRoads</a></Heading>
+                <Heading><Link to="/">RiskyRoads</Link></Heading>
                 <Spacer/>
-                {!loggedIn ? <><button style={{fontSize: '36px'}}
-                                       onClick={() => {removeToken(); toast.error('logged out!'); navigate('/login')}}>
-                    <IoLogOutOutline/></button></>
+                {!loggedIn ? <>
+                        <button style={{fontSize: '36px'}}
+                                onClick={() => {
+                                    removeToken();
+                                    toast.error('logged out!');
+                                    navigate('/login')
+                                }}>
+                            <IoLogOutOutline/></button>
+                    </>
                     : <></>}
             </Flex>
         </div>
-        );
+    );
 };
-
 export default NavBar;

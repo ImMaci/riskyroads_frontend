@@ -1,15 +1,15 @@
-import {Button, FormControl, FormLabel, Image, Input} from "@chakra-ui/react";
+import {Button, FormLabel, Image, Input} from "@chakra-ui/react";
 import finallogo from '../../assets/logofinal.png';
 import {FieldValues, useForm} from "react-hook-form";
-import {useNavigate} from "react-router-dom";
-import {useState} from "react";
+import {useNavigate, Link} from "react-router-dom";
+import {useEffect, useState} from "react";
 import {ILogin} from "../../common/models.ts";
 import {loginClient} from "../../services/login-client.ts";
 import toast from "react-hot-toast";
 import './style.css';
 
 const LoginPage = () => {
-    const { register, handleSubmit, formState: { errors } } = useForm();
+    const { register, handleSubmit} = useForm();
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
@@ -28,9 +28,16 @@ const LoginPage = () => {
             })
             .catch(err => {
                 console.log(err)
-                setError('Invalid username or password')
+                setError('Invalid email or password')
             })
     };
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if(token) {
+            navigate('/');
+        }
+    }, [navigate]);
 
     return (
         <div className="wrapper">
@@ -50,21 +57,19 @@ const LoginPage = () => {
                             type='email'
                         />
 
-                        <FormControl isInvalid={!!errors.password}>
-                            <FormLabel>Password</FormLabel>
-                            <Input
-                                {...register('password', { required: true })}
-                                id='password'
-                                type='password'
-                            />
-                        </FormControl>
+                        <FormLabel>Password</FormLabel>
+                        <Input
+                            {...register('password', { required: true })}
+                            id='password'
+                            type='password'
+                        />
                         <br /><br />
                         <center>
                             <Button type='submit'>Login</Button>
                         </center>
                     </form>
                     <br />
-                    <a href="/register">Not a member yet? Register now</a>
+                    <Link to="/register">Not a member yet? Register now</Link>
                 </div>
             </div>
         </div>

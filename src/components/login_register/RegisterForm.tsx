@@ -1,8 +1,8 @@
 import {Button, FormLabel, Image, Input} from "@chakra-ui/react";
 import { FieldValues, useForm } from "react-hook-form";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
-import {useState} from "react";
+import { useNavigate, Link } from "react-router-dom";
+import {useEffect, useState} from "react";
 import {IUser} from "../../common/models.ts";
 import {registerClient} from "../../services/login-client.ts";
 import './style.css';
@@ -35,6 +35,13 @@ const RegisterForm = () => {
             });
         navigate("/");
     };
+
+    useEffect(() => {
+        const token = localStorage.getItem('token');
+        if(token) {
+            navigate('/');
+        }
+    }, [navigate]);
 
     return (
         <div className="wrapper">
@@ -92,7 +99,7 @@ const RegisterForm = () => {
                         <Button type="submit">Register</Button>
                     </center>
                 </form>
-                <a href="/login">User already? Login now</a>
+                <Link to="/login">User already? Login now</Link>
             </div>
         </div>
     );
