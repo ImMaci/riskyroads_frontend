@@ -208,7 +208,7 @@
 
         const token = localStorage.getItem('token');
 
-        const socket = new SockJS('http://localhost:8080/ws');
+        const socket = new SockJS('http://localhost:8080/api/ws');
         stompClient = Stomp.over(socket);
         stompClient.debug = null;
         stompClient.connect({ Authorization: `Bearer ${token}` }, function (frame) {
@@ -316,7 +316,7 @@
     function connectToRandomNumbersRight() {
         const token = localStorage.getItem('token');
 
-        const socket = new SockJS('http://localhost:8080/ws');
+        const socket = new SockJS('http://localhost:8080/api/ws');
         stompClient = Stomp.over(socket);
         stompClient.debug = null;
 
@@ -339,7 +339,7 @@
 
         const token = localStorage.getItem('token');
 
-        const socket = new SockJS('http://localhost:8080/ws');
+        const socket = new SockJS('http://localhost:8080/api/ws');
         stompClient = Stomp.over(socket);
         stompClient.debug = null;
 
@@ -362,7 +362,7 @@
 
         const token = localStorage.getItem('token');
 
-        const socket = new SockJS('http://localhost:8080/ws');
+        const socket = new SockJS('http://localhost:8080/api/ws');
         stompClient = Stomp.over(socket);
         stompClient.debug = null;
 
